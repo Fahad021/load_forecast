@@ -6,8 +6,11 @@ import matplotlib.pyplot as plt
 
 def Kern(t, ti, h):
     delta_t = t - ti
-    k = 1.0 / np.sqrt(2 * np.pi * np.square(h) ) * np.exp(-0.5 * np.square(delta_t) / np.square(h) )
-    return k
+    return (
+        1.0
+        / np.sqrt(2 * np.pi * np.square(h))
+        * np.exp(-0.5 * np.square(delta_t) / np.square(h))
+    )
 
 
 def getS(t_series, h, N):

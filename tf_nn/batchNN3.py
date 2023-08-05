@@ -10,13 +10,7 @@ import glob
 
 #### get a list of buildings #### 
 def getBldMap():
-    bld_names = []
-    
-    for file in glob.glob('data\*.csv'):
-        bld_name = str(file[5:-4])
-        bld_names.append(bld_name)
-
-    return bld_names
+    return [str(file[5:-4]) for file in glob.glob('data\*.csv')]
 
 
 #### add one neural network layer ####
@@ -39,39 +33,39 @@ def NN_forecast(bld_name, n_train, n_lag, T):
     # stopping criteria
     epsilon = 1e-5
     last_l = 10000
-        
+
     ############################ TensorFlow ###################################    
     # place holders
     xs = tf.placeholder(tf.float32, [None, T * n_lag])
     ys = tf.placeholder(tf.float32, [None, T])
-    
+
     N_neuron = 50
     # hidden layers
     (l1, w1, b1) = add_layer(xs, T * n_lag, N_neuron, activation_function=tf.nn.relu)
     (l2, w2, b2) = add_layer(l1, N_neuron, N_neuron, activation_function=tf.nn.tanh)
-    
+
     # output layer
     (prediction, wo, bo) = add_layer(l2, N_neuron, T, None)
-    
+
     # loss function, RMSPE
     #loss = tf.reduce_mean(tf.reduce_sum(tf.square(ys - prediction), 1))  
     loss = T * tf.reduce_mean(tf.square(ys - prediction) )  
-    
+
     loss += 1e-2 * ( tf.nn.l2_loss(w1) + tf.nn.l2_loss(b1) + tf.nn.l2_loss(wo) + tf.nn.l2_loss(bo) )
     loss += 1e-2 * ( tf.nn.l2_loss(w2) + tf.nn.l2_loss(b2) )
-    
+
     # training step
     train_step = tf.train.AdamOptimizer().minimize(loss)
-    
+
     # init.
     init = tf.global_variables_initializer()
     # run
     sess = tf.Session()
     sess.run(init)    
-    
-    
+
+
     ###########################################################################
-    
+
     load_weekday = getWeekday.getWeekdayload(bld_name)
     max_load = np.max(load_weekday)
     #max_load = 1
@@ -79,40 +73,37 @@ def NN_forecast(bld_name, n_train, n_lag, T):
     ################## generate data ##########################################
     MAPE_sum = 0.0
     RMSPR_sum = 0.0
-    
+
     for curr_day in range(n_train + n_lag, n_days-1):
         y_train = np.zeros((n_train, T))
         X_train = np.zeros((n_train, T * n_lag))
-        row = 0
-        for train_day in range(curr_day - n_train, curr_day):
+        for row, train_day in enumerate(range(curr_day - n_train, curr_day)):
             y_train[row,:] = load_weekday[train_day * T : train_day * T + T]
             X_train[row,0*T*n_lag:1*T*n_lag] = load_weekday[train_day * T - n_lag * T: train_day * T]
-            row += 1
-		max_load = np.max(X_train)
+            max_load = np.max(X_train)
         min_load = np.min(X_train)    
-		
+
         # building test data
         X_test = np.zeros((1, T * n_lag))
         X_test[0, 0*T*n_lag:1*T*n_lag] = load_weekday[curr_day*T - n_lag*T: curr_day*T]
         y_test = load_weekday[curr_day*T: curr_day *T + T]
-        
+
         X_train = (X_train-min_load) / (max_load - min_load)
         y_train = (y_train-min_load) / (max_load - min_load)
         X_test = (X_test-min_load) / (max_load - min_load)
-                
+
 
         # training 
         i = 0
         while (i < Max_iter):
             # training
             (t_step, l) = sess.run([train_step, loss], feed_dict={xs: X_train, ys: y_train})
-            if(abs(last_l - l) < epsilon):
+            if (abs(last_l - l) < epsilon):
                 break
-            else:
-                last_l = l
-                i = i+1
-            
-        
+            last_l = l
+            i += 1
+                        
+
         #y_ = prediction.eval(session = sess, feed_dict={xs: X_train})
         y_pred = prediction.eval(session = sess, feed_dict={xs: X_test})
         y_pred = y_pred * (max_load - min_load) + min_load
@@ -131,14 +122,14 @@ def NN_forecast(bld_name, n_train, n_lag, T):
         #print('MAPE: %.2f, RMSPE: %.2f' % (mape, rmspe))
         MAPE_sum += mape
         RMSPR_sum += rmspe
-        
+
 
     # close session
     tf.reset_default_graph() # reset the graph 
     sess.close() 
-    
 
-    
+
+
     days_sample = n_days - 1 - n_train - n_lag
 
     return (MAPE_sum / days_sample, RMSPR_sum / days_sample)

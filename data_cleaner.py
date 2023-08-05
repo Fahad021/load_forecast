@@ -7,8 +7,8 @@ import time
 def read_rawData(bld_name, start_time, end_time):
     ##########################################################
     # time(integer) to load (kW) map
-    load_map = dict()
-    
+    load_map = {}
+
     # read the .csv file
     loads_list = pd.read_csv(bld_name + '.csv', sep = ',')
     N_lines = len(loads_list.index)
@@ -22,23 +22,23 @@ def read_rawData(bld_name, start_time, end_time):
                 load_map[t_load] = 0.0
                 #print("missing load data at time" + load_time)
             else:
-                
+
                 load_map[t_load] = float(loads_list.iloc[i, 1])
-     
-    
+
+
     start_t = datetime.datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S')
     start_t = int(time.mktime(start_t.timetuple()))
     end_t = datetime.datetime.strptime(end_time, '%Y-%m-%dT%H:%M:%S')
     end_t = int(time.mktime(end_t.timetuple()))
-    
-    
+
+
     # create the data frame
     df = pd.DataFrame([], [], ['timestamp', 'load'])
     row = 0
     t = start_t
-    while(t < end_t):
+    while (t < end_t):
         cur_time = datetime.datetime.fromtimestamp(t)
-        if(t in load_map.keys() and load_map[t] > 0.0):
+        if t in load_map and load_map[t] > 0.0:
             df.loc[row] = [cur_time, load_map[t]]
         else:
             t_yes = t - 86400
@@ -48,9 +48,9 @@ def read_rawData(bld_name, start_time, end_time):
             df.loc[row] = [cur_time, load_yes] # timestamp missing or abnormal value
             load_map[t] = load_yes # update the load map
         row += 1
-        
+
         t += 900 # move to next 15min interval
-     
+
     # write output to csv file
     df.to_csv('cleaned/' + bld_name + '_cleaned.csv', sep=',', index = False)
     
@@ -60,11 +60,11 @@ def get_StartTime(bld_name):
     d = datetime.datetime.strptime(first_time, '%Y-%m-%dT%H:%M:%S')
     month_d = {1:31, 2:28, 3:31, 4:30, 5:31, 6:30, 7:31, 8:31, 9:30, 10:31, 11:30, 12:31};
     d_max = month_d[d.month]
-    if d.day == d_max:
-        start_time = str(d.year) + '-' + str(d.month+1) + '-0' + str(1) + 'T00:00:00'
-    else:
-        start_time = str(d.year) + '-' + str(d.month) + '-' + str(d.day+1) + 'T00:00:00'
-    return start_time
+    return (
+        f'{str(d.year)}-{str(d.month + 1)}-01T00:00:00'
+        if d.day == d_max
+        else f'{str(d.year)}-{str(d.month)}-{str(d.day + 1)}T00:00:00'
+    )
 '''
 if __name__ == "__main__":
     ############# inputs #####################

@@ -12,32 +12,26 @@ def genData(bld_name, n_train, n_valid, n_lag, T, curr_day):
     max_load = np.max(load_weekday)
     min_load = np.min(load_weekday)
     load_weekday = (load_weekday - min_load) / (max_load - min_load)
-    
+
     ################## generate data ##########################################
     y_train = np.zeros((n_train, T))
     X_train = np.zeros((n_train, T * n_lag))
-    
+
     y_valid = np.zeros((n_valid, T))
     X_valid = np.zeros((n_valid, T * n_lag))
-    
-    row = 0
-    for train_day in range(curr_day - n_train - n_valid, curr_day - n_valid):
+
+    for row, train_day in enumerate(range(curr_day - n_train - n_valid, curr_day - n_valid)):
         y_train[row,:] = load_weekday[train_day * T : train_day * T + T]
         X_train[row,0*T*n_lag:1*T*n_lag] = load_weekday[train_day * T - n_lag * T: train_day * T]
-        row += 1
-    
-    row = 0
-    for valid_day in range(curr_day - n_valid, curr_day):
+    for row, valid_day in enumerate(range(curr_day - n_valid, curr_day)):
         y_valid[row,:] = load_weekday[valid_day * T : valid_day * T + T]
         X_valid[row,0*T*n_lag:1*T*n_lag] = load_weekday[valid_day * T - n_lag * T: valid_day * T]
-        row += 1    
-        
     # building test data
     X_test = np.zeros((1, T * n_lag))
     X_test[0, 0*T*n_lag:1*T*n_lag] = load_weekday[curr_day*T - n_lag*T: curr_day*T]
     y_test = load_weekday[curr_day*T: curr_day *T + T]
-    
-    
+
+
     return(X_train, y_train, X_valid, y_valid, X_test, y_test, min_load, max_load)
         
     

@@ -8,15 +8,14 @@ import time
 
 def get_StartTime(bld_name):
     loads_list = pd.read_csv(bld_name + '.csv', sep = ',')
-    first_time = loads_list.iloc[0, 0]
-    return first_time
+    return loads_list.iloc[0, 0]
 
 
 def ReadWeather():
     weather_year = 'weather/seattle'
-    weather_list = pd.read_csv(weather_year + '.csv', sep = ',')
+    weather_list = pd.read_csv(f'{weather_year}.csv', sep = ',')
     N_lines = len(weather_list.index)
-    
+
     DewPoint = np.zeros((N_lines))
     DHI = np.zeros((N_lines))
     DNI = np.zeros((N_lines))
@@ -24,7 +23,7 @@ def ReadWeather():
     Pressure = np.zeros((N_lines))
     Humidity = np.zeros((N_lines))
     WindSpeed = np.zeros((N_lines))
-    
+
     times = np.zeros((N_lines))
     timestamp = []
     for i in range(N_lines):
@@ -33,11 +32,11 @@ def ReadWeather():
         day = int(weather_list.iloc[i, 2])
         hour = int(weather_list.iloc[i, 3])
         minute = int(weather_list.iloc[i, 4])
-        
+
         d = datetime.datetime(year, month, day, hour, minute, 0)
         timestamp.append(d)
         times[i] = int(time.mktime(d.timetuple()))
-        
+
         DewPoint[i] = float(weather_list.iloc[i, 5])
         DHI[i] = float(weather_list.iloc[i, 6])
         DNI[i] = float(weather_list.iloc[i, 7])
@@ -45,7 +44,7 @@ def ReadWeather():
         Pressure[i] = float(weather_list.iloc[i, 9])
         Humidity[i] = float(weather_list.iloc[i, 10])
         WindSpeed[i] = float(weather_list.iloc[i, 11])
-        
+
     return(times, DewPoint, DHI, DNI, Temp, Pressure, Humidity, WindSpeed)
     
     

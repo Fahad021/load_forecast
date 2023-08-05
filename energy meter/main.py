@@ -7,12 +7,12 @@ import pandas as pd
 
 
 def getBldMap():
-    bld_map = dict()
-    
+    bld_map = {}
+
     for file in glob.glob('energy\*.csv'):
         bld_name = str(file[7:-4])
-        bld_no = bld_name[0:4]
-        if bld_no in bld_map.keys():
+        bld_no = bld_name[:4]
+        if bld_no in bld_map:
             bld_map[bld_no].append(bld_name)
         else:
             bld_map[bld_no] = [bld_name]

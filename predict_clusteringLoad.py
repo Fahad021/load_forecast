@@ -13,21 +13,18 @@ def forecast_kMeans_NN(bld_name, load_weekday, n_train, n_lag, n_clusters):
     for curr_day in range(n_train + n_lag, n_days-1):
         y_train = np.zeros((n_train, T))
         X_train = np.zeros((n_train, T * n_lag))
-        row = 0
-        for train_day in range(curr_day - n_train, curr_day):
+        for row, train_day in enumerate(range(curr_day - n_train, curr_day)):
             y_train[row,:] = load_weekday[train_day * T : train_day * T + T]
             X_train[row,:] = load_weekday[train_day * T - n_lag * T: train_day * T]
-            row += 1
-            
         # building test data
         X_test = load_weekday[curr_day*T - n_lag*T: curr_day*T]
         y_test = load_weekday[curr_day*T: curr_day *T + T]
-        
+
         # n_clusters = 5
         kmeans = KMeans(n_clusters, random_state=0)
         kmeans.fit(y_train.T)
         labels = list(kmeans.labels_)
-        
+
         y_nn = np.zeros((T))
         # cluster NN
         for c in range(n_clusters):
@@ -39,19 +36,19 @@ def forecast_kMeans_NN(bld_name, load_weekday, n_train, n_lag, n_clusters):
             X_train_c = X_train[:, cluster_train]
             y_train_c = y_train[:, cluster_idx]            
             X_test_c = X_test[cluster_train]
-           
+
             nn = MLPRegressor(hidden_layer_sizes = (50, 50), activation = 'relu', max_iter = 10000)        
             nn.fit(X_train_c, y_train_c)
             y_nn_c = nn.predict(X_test_c)
             y_nn[cluster_idx] = y_nn_c    
-        
+
         # statistics of Neural Network
         MAPE_nn = predict_util.calMAPE(y_test, y_nn)
         MAPE_sum_nn += MAPE_nn
         RMSPE_nn = predict_util.calRMSPE(y_test, y_nn)
         RMSPE_sum_nn += RMSPE_nn
-        
-        
+
+
     days_sample = n_days - 1 - n_train - n_lag
     MAPE_avg_nn = MAPE_sum_nn / days_sample
     RMSPE_avg_nn = RMSPE_sum_nn / days_sample
